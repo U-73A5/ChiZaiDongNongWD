@@ -1,3 +1,4 @@
+from re import S
 from rich import print
 ## this is not necessary, just for better looking.
 # there is no influence after comment it.
@@ -6,6 +7,7 @@ from rich import print
 from typing import overload
 from lxml import etree
 import requests
+import json
 import csv
 
 
@@ -66,15 +68,65 @@ userAgentList = [
 
 
 ##
+class metaData:
+    def __init__(self) -> None:
+        # TODO data set init
+        pass
+
+
+##
+class CrawlData(metaData):
+    def __init__(self) -> None:
+        super().__init__()
+        self.pointer = 0
+        self._data = []
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __getitem__(self, indix: int) -> dict:
+        return self._data[indix]
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        if self.pointer < len(self._data):
+            self.pointer += 1
+            return self._data[self.pointer]
+        else:
+            self.pointer = 0
+            raise StopIteration
+
+    def loadData(self, file: str) -> bool:
+        try:
+            with open(file, 'r') as f:
+                self._data = json.load(f)
+        except:
+            return False
+        else:
+            return True
+    
+    def saveData(self, file: str) -> bool:
+        try:
+            with open(file, 'w') as f:
+                json.dump(self._data, f)
+        except:
+            return False
+        else:
+            return True
+
+
+##
 class CrawlStatus:
     _urlNew = 'http://czneau.com/api/posts'
     _urlHot = 'http://czneau.com/api/hot'
     _referer = 'http://czneau.com/'
     _userAgent = userAgentList
-    _pageSize = '15'
-    _fromId = ''
 
     def __init__(self) -> None:
+        self._pageSize = '15'
+        self._fromId = ''
         pass
     
     @property
@@ -89,6 +141,13 @@ class CrawlStatus:
     @property
     def userAgent(self) -> list:
         return CrawlStatus._userAgent
+
+    @property
+    def pageSize(self) -> str:
+        return self._pageSize
+    @property
+    def fromID(self) -> str:
+        return self._fromId
 
     @staticmethod
     def setUrlNew(url: str) -> bool:
@@ -128,17 +187,42 @@ class CrawlStatus:
             return False
         else:
             return True
+    
+    @overload
+    def setPageSize(self, x: int) -> bool: ...
+    @overload
+    def setPageSize(self, x: str) -> bool: ...
+    def setPageSize(self, x) -> bool:
+        try:
+            self._pageSize = f'{x}' if type(x) == str else x
+        except:
+            return False
+        else:
+            return True
+    @overload
+    def setFromId(self, x: int) -> bool: ...
+    @overload
+    def setFromId(self, x: str) -> bool: ...
+    def setFromId(self, x) -> bool:
+        try:
+            self._pageSize = f'{x}' if type(x) == str else x
+        except:
+            return False
+        else:
+            return True
 
 
 ##
-class CrawlCzNeau(CrawlStatus):
+class CrawlCzNeau(CrawlStatus, CrawlData):
     def __init__(self) -> None:
         super().__init__()
     
-    def getJson(self, url, headers, params) -> dict:
+    def getJsonData(self, url, headers, params) -> list:
+        # TODO headers params
         resp = requests.get(url=url, headers=headers, params=params)
         resp.close()
-        return resp.json()
+        jsonData = [] # TODO process
+        return jsonData
 
 
 ## nickname of class
