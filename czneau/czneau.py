@@ -1,4 +1,4 @@
-import tempfile
+from rich.console import Console
 from rich import print
 from rich import traceback
 traceback.install()
@@ -83,29 +83,46 @@ class CrawlData():
 
     @property
     def dataInfo(self):
+        r'''数据信息'''
         return {'type': type(self._data), 'len': len(self._data)}
     @property
     def data(self):
         return self._data
     
     def _add(self, key, value: dict) -> bool:
+        r'''添加评论到数据集'''
         try: self._data[key] = value
         except: return False
         else: return True
 
     def loadData(self, file: str) -> bool:
+        r'''加载json文件'''
         try:
-            with open(file, 'r', encoding='utf-8') as f:
-                self._data = json.load(f)
+            console = Console()
+            with console.status('[bold red]Start loading...') as status:
+                with open(file, 'r', encoding='utf-8') as f:
+                    self._data = json.load(f)
+            print('<load finish>')
         except: return False
         else: return True
     
     def saveData(self, file: str) -> bool:
+        r'''保存json文件'''
         try:
-            with open(file, 'w', encoding='utf-8') as f:
-                json.dump(self._data, f)
+            console = Console()
+            with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
+                time.sleep(3)
+                with open(file, 'w', encoding='utf-8') as f:
+                    json.dump(self._data, f)
+            print('<save finish>')
         except: return False
         else: return True
+    
+    def print(self, allInfo=False) -> None:
+        r'''输出相关数据信息, 默认不输出数据集'''
+        print(self.dataInfo)
+        if allInfo: print(self.data)
+
 
 
 ##
@@ -149,6 +166,7 @@ class CrawlStatus:
         else: return True
     @property
     def referer(self) -> str:
+        r'''防盗链'''
         return CrawlStatus._referer
     @referer.setter
     def referer(self, value: str) -> bool:
@@ -157,6 +175,7 @@ class CrawlStatus:
         else: return True
     @property
     def userAgent(self) -> list:
+        r'''User-Agent of headers'''
         return CrawlStatus._userAgent
     @userAgent.setter
     def userAgent(self, agents) -> bool:
@@ -166,6 +185,7 @@ class CrawlStatus:
 
     @property
     def pageSize(self) -> str:
+        r'''大小介于[1,30), 默认29'''
         return self._pageSize
     @pageSize.setter
     def pageSize(self, value) -> bool:
@@ -208,6 +228,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         CrawlData.__init__(self)
     
     def _getJsonData(self, url) -> list:
+        r'''获取json'''
         headers = {
             'User-Agent': random.choice(self.userAgent),
             'Referer': self.referer
@@ -223,30 +244,40 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         return jsonData['data'] if jsonData['code'] == 200 else []
     
     def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int) -> int:
+        r'''爬虫主循环'''
         dataList = []
         for _i in range(crawlTimes):
-            sleepT = random.random() if sleepTime == None else sleepTime
-            dataList = self._getJsonData(url)
-            if len(dataList) == 0: break
-            for dt in dataList:
-                self._add(dt['id'], dt)
-                self.fromID = dt['id']
-            time.sleep(sleepT)
+            console = Console()
+            with console.status(f'[bold yellow]Crawling Times:{_i}...', spinner='line', spinner_style='red') as status:
+                sleepT = random.random() if sleepTime == None else sleepTime
+                dataList = self._getJsonData(url)
+                if len(dataList) == 0: break
+                for dt in dataList:
+                    self._add(dt['id'], dt)
+                    self.fromID = dt['id']
+                time.sleep(sleepT)
+            print(f'{_i}: Crawl finish. Sleep {sleepT} second.')
         return len(dataList)
 
     def crawlNew(self, crawlTimes=1, sleepTime=None) -> int:
+        r'''爬取最新评论'''
+        print('<function crwalNew() running>')
         if self.url != self.urlNew:
             self.url = self.urlNew
             self.fromID = ''
         return self._crawlMain(self.url, crawlTimes, sleepTime)
 
     def crawlHot(self, crawlTimes=1, sleepTime=None) -> int:
+        r'''爬取热评'''
+        print('<function crwalHot() running>')
         if self.url != self.urlHot:
             self.url = self.urlHot
             self.fromID = ''
         return self._crawlMain(self.url, crawlTimes, sleepTime)
     
     def crawlComment(self, sleepTime=None) -> None:
+        r'''爬取评论的回复'''
+        print('<function crwalComment() running>')
         tempList = []
         for dt in self.data.values():
             if dt['commentCount'] == 0: continue
