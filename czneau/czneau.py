@@ -1,14 +1,15 @@
-from re import S
+import tempfile
 from rich import print
-## this is not necessary, just for better looking.
-# there is no influence after comment it.
+from rich import traceback
+traceback.install()
+## these are not necessary, just for better looking.
+# there is no influence after comment them.
 
 ##
-from typing import overload
-from lxml import etree
 import requests
+import random
+import time
 import json
-import csv
 
 
 ##
@@ -67,162 +68,196 @@ userAgentList = [
 ]
 
 
-##
-class metaData:
+## maybe better inherit from dict
+# but iam not familiar with python
+class CrawlData():
     def __init__(self) -> None:
-        # TODO data set init
-        pass
-
-
-##
-class CrawlData(metaData):
-    def __init__(self) -> None:
-        super().__init__()
-        self.pointer = 0
-        self._data = []
+        self._data = {}
 
     def __len__(self) -> int:
         return len(self._data)
 
-    def __getitem__(self, indix: int) -> dict:
-        return self._data[indix]
+    def __getitem__(self, key) -> dict:
+        try: return self._data[key]
+        except: return {}
+
+    @property
+    def dataInfo(self):
+        return {'type': type(self._data), 'len': len(self._data)}
+    @property
+    def data(self):
+        return self._data
     
-    def __iter__(self):
-        return self
-    
-    def __next__(self):
-        if self.pointer < len(self._data):
-            self.pointer += 1
-            return self._data[self.pointer]
-        else:
-            self.pointer = 0
-            raise StopIteration
+    def _add(self, key, value: dict) -> bool:
+        try: self._data[key] = value
+        except: return False
+        else: return True
 
     def loadData(self, file: str) -> bool:
         try:
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 self._data = json.load(f)
-        except:
-            return False
-        else:
-            return True
+        except: return False
+        else: return True
     
     def saveData(self, file: str) -> bool:
         try:
-            with open(file, 'w') as f:
+            with open(file, 'w', encoding='utf-8') as f:
                 json.dump(self._data, f)
-        except:
-            return False
-        else:
-            return True
+        except: return False
+        else: return True
 
 
 ##
 class CrawlStatus:
+    _urlComment = 'http://czneau.com/api/comments'
     _urlNew = 'http://czneau.com/api/posts'
     _urlHot = 'http://czneau.com/api/hot'
     _referer = 'http://czneau.com/'
     _userAgent = userAgentList
 
     def __init__(self) -> None:
-        self._pageSize = '15'
+        self._pageSize = '29' # this must less than 30
         self._fromId = ''
+        self._postId = ''
+        self._url = ''
         pass
     
     @property
+    def urlComment(self) -> str:
+        return CrawlStatus._urlComment
+    @urlComment.setter
+    def urlComment(self, url: str) -> bool:
+        try: CrawlStatus._urlComment = url
+        except: return False
+        else: return True
+    @property
     def urlNew(self) -> str:
         return CrawlStatus._urlNew
+    @urlNew.setter
+    def urlNew(self, url: str) -> bool:
+        try: CrawlStatus._urlNew = url
+        except: return False
+        else: return True
     @property
     def urlHot(self) -> str:
         return CrawlStatus._urlHot
+    @urlHot.setter
+    def urlHot(self, url: str) -> bool:
+        try: CrawlStatus._urlHot = url
+        except: return False
+        else: return True
     @property
     def referer(self) -> str:
         return CrawlStatus._referer
+    @referer.setter
+    def referer(self, value: str) -> bool:
+        try: CrawlStatus._referer = value
+        except: return False
+        else: return True
     @property
     def userAgent(self) -> list:
         return CrawlStatus._userAgent
+    @userAgent.setter
+    def userAgent(self, agents) -> bool:
+        try: CrawlStatus._userAgent = [agents] if type(agents) == str else agents
+        except: return False
+        else: return True
 
     @property
     def pageSize(self) -> str:
         return self._pageSize
+    @pageSize.setter
+    def pageSize(self, value) -> bool:
+        if value <= 0 or value >=30:
+            print('The size of page must in interval [1, 30)')
+            return False
+        try: self._pageSize = value if type(value) == str else f'{value}'
+        except: return False
+        else: return True
     @property
     def fromID(self) -> str:
         return self._fromId
-
-    @staticmethod
-    def setUrlNew(url: str) -> bool:
-        try:
-            CrawlStatus._urlNew = url
-        except:
-            return False
-        else:
-            return True
-    @staticmethod
-    def setUrlHot(url: str) -> bool:
-        try:
-            CrawlStatus._urlNew = url
-        except:
-            return False
-        else:
-            return True
-    @staticmethod
-    def setReferer(url: str) -> bool:
-        try:
-            CrawlStatus._urlNew = url
-        except:
-            return False
-        else:
-            return True
-    @overload
-    @staticmethod
-    def setUserAgent(x: str) -> bool: ...
-    @overload
-    @staticmethod
-    def setUserAgent(x: list) -> bool: ...
-    @staticmethod
-    def setUserAgent(x) -> bool:
-        try:
-            CrawlStatus._userAgent = [x] if type(x) == str else x
-        except:
-            return False
-        else:
-            return True
-    
-    @overload
-    def setPageSize(self, x: int) -> bool: ...
-    @overload
-    def setPageSize(self, x: str) -> bool: ...
-    def setPageSize(self, x) -> bool:
-        try:
-            self._pageSize = f'{x}' if type(x) == str else x
-        except:
-            return False
-        else:
-            return True
-    @overload
-    def setFromId(self, x: int) -> bool: ...
-    @overload
-    def setFromId(self, x: str) -> bool: ...
-    def setFromId(self, x) -> bool:
-        try:
-            self._pageSize = f'{x}' if type(x) == str else x
-        except:
-            return False
-        else:
-            return True
+    @fromID.setter
+    def fromID(self, value) -> bool:
+        try: self._fromId = value if type(value) == str else f'{value}'
+        except: return False
+        else: return True
+    @property
+    def postID(self) -> str:
+        return self._postId
+    @postID.setter
+    def postID(self, value) -> bool:
+        try: self._postId = value if type(value) == str else f'{value}'
+        except: return False
+        else: return True
+    @property
+    def url(self) -> str:
+        return self._url
+    @url.setter
+    def url(self, value: str) -> bool:
+        try: self._url = value
+        except: return False
+        else: return True
 
 
 ##
 class CrawlCzNeau(CrawlStatus, CrawlData):
     def __init__(self) -> None:
-        super().__init__()
+        CrawlStatus.__init__(self)
+        CrawlData.__init__(self)
     
-    def getJsonData(self, url, headers, params) -> list:
-        # TODO headers params
+    def _getJsonData(self, url) -> list:
+        headers = {
+            'User-Agent': random.choice(self.userAgent),
+            'Referer': self.referer
+        }
+        params = {
+            'pageSize': self.pageSize,
+            'fromId': self.fromID,
+            'postId': self.postID
+        }
         resp = requests.get(url=url, headers=headers, params=params)
         resp.close()
-        jsonData = [] # TODO process
-        return jsonData
+        jsonData = resp.json()
+        return jsonData['data'] if jsonData['code'] == 200 else []
+    
+    def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int) -> int:
+        dataList = []
+        for _i in range(crawlTimes):
+            sleepT = random.random() if sleepTime == None else sleepTime
+            dataList = self._getJsonData(url)
+            if len(dataList) == 0: break
+            for dt in dataList:
+                self._add(dt['id'], dt)
+                self.fromID = dt['id']
+            time.sleep(sleepT)
+        return len(dataList)
+
+    def crawlNew(self, crawlTimes=1, sleepTime=None) -> int:
+        if self.url != self.urlNew:
+            self.url = self.urlNew
+            self.fromID = ''
+        return self._crawlMain(self.url, crawlTimes, sleepTime)
+
+    def crawlHot(self, crawlTimes=1, sleepTime=None) -> int:
+        if self.url != self.urlHot:
+            self.url = self.urlHot
+            self.fromID = ''
+        return self._crawlMain(self.url, crawlTimes, sleepTime)
+    
+    def crawlComment(self, sleepTime=None) -> None:
+        tempList = []
+        for dt in self.data.values():
+            if dt['commentCount'] == 0: continue
+            tempCCN = CrawlCzNeau()
+            tempCCN.postID = dt['id']
+            temp = 1
+            while temp != 0:
+                temp = tempCCN._crawlMain(self.urlComment, 1, sleepTime)
+            tempList.append((dt['id'], tempCCN.data.values()))
+        for commentD in tempList:
+            self.data[commentD[0]]['commentList'] = commentD[1]
 
 
 ## nickname of class
