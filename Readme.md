@@ -1,4 +1,4 @@
-# ChizZaiDongNongWD
+# ChiZaiDongNongWD
 用于爬取[东农饭团](http://czneau.com/)上的数据。
 
 ## 样例
