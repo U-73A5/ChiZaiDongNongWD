@@ -255,9 +255,9 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
             temp = 1
             while temp != 0:
                 temp = tempCCN._crawlMain(self.urlComment, 1, sleepTime)
-            tempList.append((dt['id'], tempCCN.data.values()))
+            tempList.append((dt['id'], tempCCN.data.values(), ))
         for commentD in tempList:
-            self.data[commentD[0]]['commentList'] = commentD[1]
+            self.data[commentD[0]]['commentList'] = list(commentD[1])
 
 
 ## nickname of class
