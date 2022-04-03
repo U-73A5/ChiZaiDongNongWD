@@ -46,7 +46,7 @@ CCN().data[0]['commentList'] = {
 ```
 
 ## 接口说明
-```
+```python
 ## 爬取热评
 def crawlHot(self,
     crawlTimes=1, # 爬取次数；(2022/4/3)默认'pageSize'='29'下，当其值约为3500时可以爬取所有数据(该值为估算，没有测试)。
