@@ -1,4 +1,3 @@
-from rich.console import Console
 from rich import print
 from rich import traceback
 traceback.install()
@@ -6,6 +5,7 @@ traceback.install()
 # there is no influence after comment them.
 
 ##
+from rich.console import Console
 import requests
 import random
 import time
