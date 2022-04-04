@@ -22,7 +22,8 @@ dld.print() # 输出数据信息
 
 ```python
 CCN().data = {
-    {
+    int() # 键值，即为 value中的 id
+    :{
         'id': int(), # 使用 id 判定是否为相同数据
         'content': str(), # 评论内容
         'likeCount': int(), # 点赞数
@@ -34,15 +35,15 @@ CCN().data = {
 }
 
 # commentCount非 0 时有
-CCN().data[0]['commentList'] = {
+CCN().data[0]['commentList'] = [
     {
-        'id': int() # 该 id 不参与任何判断
+        'id': int(), # 该 id 不参与任何判断
         'content': str(), # 回复内容
         'likeCount': int(), # 回复点赞数
         ##...
     },
     ##...
-}
+]
 ```
 
 ## 接口说明
