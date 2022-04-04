@@ -238,9 +238,13 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
             'fromId': self.fromID,
             'postId': self.postID
         }
-        resp = requests.get(url=url, headers=headers, params=params)
-        resp.close()
-        jsonData = resp.json()
+        jsonData = { 'code': 666 }
+        try:
+            resp = requests.get(url=url, headers=headers, params=params)
+            resp.close()
+            jsonData = resp.json()
+        except:
+            print('An [red]Error[/red] Raised As Expected. I don\'t know reason now, it may fixed in future version.')
         return jsonData['data'] if jsonData['code'] == 200 else []
     
     def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int) -> int:
@@ -281,6 +285,8 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         tempList = []
         for dt in self.data.values():
             if dt['commentCount'] == 0: continue
+            dt_id = dt['id']
+            print(f'爬取{dt_id}评论回复')
             tempCCN = CrawlCzNeau()
             tempCCN.postID = dt['id']
             temp = 1
