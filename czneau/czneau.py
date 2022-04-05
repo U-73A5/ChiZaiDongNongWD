@@ -1,16 +1,18 @@
-from rich import print
-from rich import traceback
-traceback.install()
-## these are not necessary, just for better looking.
-# there is no influence after comment them.
+'''
+提供CCN类
+'''
 
-##
 from rich.console import Console
+from collections import UserDict
+from typing import overload
+from rich import traceback
+from rich import print
 import requests
 import random
 import time
 import json
 
+traceback.install()
 
 ##
 userAgentList = [
@@ -68,61 +70,66 @@ userAgentList = [
 ]
 
 
-## maybe better inherit from dict
-# but iam not familiar with python
-class CrawlData():
+class CrawlData(UserDict):
     def __init__(self) -> None:
-        self._data = {}
+        super().__init__()
 
     def __len__(self) -> int:
-        return len(self._data)
+        return super().__len__()
 
+    @overload
+    def __getitem__(self, key: int) -> dict: ...
+    @overload
+    def __getitem__(self, key: str) -> dict: ...
     def __getitem__(self, key) -> dict:
-        try: return self._data[key]
-        except: return {}
-
-    @property
-    def dataInfo(self):
-        r'''数据信息'''
-        return {'type': type(self._data), 'len': len(self._data)}
-    @property
-    def data(self):
-        return self._data
+        return super().__getitem__(key)
     
-    def _add(self, key, value: dict) -> bool:
-        r'''添加评论到数据集'''
-        try: self._data[key] = value
-        except: return False
-        else: return True
+    @overload
+    def __setitem__(self, key: int, item: dict) -> None: ...
+    @overload
+    def __setitem__(self, key: str, item: dict) -> None: ...
+    @overload
+    def __setitem__(self, key: tuple, item: dict) -> None: ...
+    def __setitem__(self, key, item) -> None:
+        return super().__setitem__(key, item)
+    
+    @overload
+    def __delitem__(self, key: int): ...
+    @overload
+    def __delitem__(self, key: str): ...
+    def __delitem__(self, key):
+        return super().__delitem__(key)
+
+    def __iter__(self):
+        return super().__iter__()
+
+    def __repr__(self):
+        return f'{type(self).__name__}({repr(self.data)})'
 
     def loadData(self, file: str) -> bool:
         r'''加载json文件'''
         try:
+            print('[purple]<load start>[/purple]')
             console = Console()
             with console.status('[bold red]Start loading...') as status:
                 with open(file, 'r', encoding='utf-8') as f:
-                    self._data = json.load(f)
-            print('<load finish>')
+                    self.data = json.load(f)
+            print('[cyan]<load finish>[/cyan]')
         except: return False
         else: return True
     
     def saveData(self, file: str) -> bool:
         r'''保存json文件'''
         try:
+            print('[purple]<save start>[/purple]')
             console = Console()
             with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
                 time.sleep(3)
                 with open(file, 'w', encoding='utf-8') as f:
-                    json.dump(self._data, f)
-            print('<save finish>')
+                    json.dump(self.data, f)
+            print('[cyan]<save finish>[/cyan]')
         except: return False
         else: return True
-    
-    def print(self, allInfo=False) -> None:
-        r'''输出相关数据信息, 默认不输出数据集'''
-        print(self.dataInfo)
-        if allInfo: print(self.data)
-
 
 
 ##
@@ -134,10 +141,11 @@ class CrawlStatus:
     _userAgent = userAgentList
 
     def __init__(self) -> None:
-        self._pageSize = '29' # this must less than 30
+        self._pageSize = 0 # this must less than 30
         self._fromId = ''
         self._postId = ''
         self._url = ''
+        self._proxies = None
         pass
     
     @property
@@ -219,82 +227,118 @@ class CrawlStatus:
         try: self._url = value
         except: return False
         else: return True
+    @property
+    def proxies(self):
+        return self._proxies
+    @proxies.setter
+    def proxies(self, value: dict) -> bool:
+        try: self._proxies = value
+        except: return False
+        else: return True
 
 
 ##
 class CrawlCzNeau(CrawlStatus, CrawlData):
+    _indentSize = 2
+
+    @property
+    def indentSize(self) -> int:
+        return CrawlCzNeau._indentSize
+    @indentSize.setter
+    def indentSize(self, value: int) -> bool:
+        try: CrawlCzNeau._indentSize = value
+        except: return False
+        else: return True
+
     def __init__(self) -> None:
+        self.level = 0
         CrawlStatus.__init__(self)
         CrawlData.__init__(self)
     
-    def _getJsonData(self, url) -> list:
+    def _getJsonData(self, url, level=0) -> list:
         r'''获取json'''
+        levelIndentSize = ' ' * self._indentSize * level
         headers = {
             'User-Agent': random.choice(self.userAgent),
-            'Referer': self.referer
+            'Referer': self.referer,
         }
         params = {
-            'pageSize': self.pageSize,
+            'pageSize': random.randint(15, 29) if self.pageSize == 0 else self.pageSize,
             'fromId': self.fromID,
             'postId': self.postID
         }
-        jsonData = { 'code': 666 }
+        proxies = self.proxies
+        jsonData = {}
         try:
-            resp = requests.get(url=url, headers=headers, params=params)
+            resp = requests.get(url=url, headers=headers, params=params, proxies=proxies)
             resp.close()
+            if resp.status_code != 200:
+                print(f'\n{levelIndentSize}Response Status Code: [red]{resp.status_code}[/red]')
+                return []
             jsonData = resp.json()
-        except:
-            print('An [red]Error[/red] Raised As Expected. I don\'t know reason now, it may fixed in future version.')
-        return jsonData['data'] if jsonData['code'] == 200 else []
+        except requests.exceptions.ProxyError:
+            print('\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n大概率 [blue]ip[/blue] 被封了. 要等段时间或加代理.')
+            exit(-1)
+        return jsonData['data']
     
-    def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int) -> int:
+    def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int, level: int) -> int:
         r'''爬虫主循环'''
+        levelIndentSize = ' ' * self._indentSize * level
         dataList = []
         for _i in range(crawlTimes):
             console = Console()
             with console.status(f'[bold yellow]Crawling Times:{_i}...', spinner='line', spinner_style='red') as status:
-                sleepT = random.random() if sleepTime == None else sleepTime
-                dataList = self._getJsonData(url)
+                sleepT = random.random() * 3 if sleepTime == None else sleepTime
+                dataList = self._getJsonData(url, level+1)
                 if len(dataList) == 0: break
                 for dt in dataList:
-                    self._add(dt['id'], dt)
+                    self.data[dt['id']] = dt
                     self.fromID = dt['id']
                 time.sleep(sleepT)
-            print(f'{_i}: Crawl finish. Sleep {sleepT} second.')
+            print(f'{levelIndentSize}[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {len(dataList)} dates.[/yellow]')
         return len(dataList)
 
-    def crawlNew(self, crawlTimes=1, sleepTime=None) -> int:
+    def crawlNew(self, crawlTimes=1, sleepTime=None, level=0) -> int:
         r'''爬取最新评论'''
-        print('<function crwalNew() running>')
+        levelIndentSize = ' ' * self._indentSize * level
+        print(f'{levelIndentSize}[purple]<function crwalNew() In>[/purple]')
         if self.url != self.urlNew:
             self.url = self.urlNew
             self.fromID = ''
-        return self._crawlMain(self.url, crawlTimes, sleepTime)
+        result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
+        print(f'{levelIndentSize}[cyan]<function crwalNew() Out>[/cyan]')
+        return result
 
-    def crawlHot(self, crawlTimes=1, sleepTime=None) -> int:
+    def crawlHot(self, crawlTimes=1, sleepTime=None, level=0) -> int:
         r'''爬取热评'''
-        print('<function crwalHot() running>')
+        levelIndentSize = ' ' * self._indentSize * level
+        print(f'{levelIndentSize}[purple]<function crwalHot() In>[/purple]')
         if self.url != self.urlHot:
             self.url = self.urlHot
             self.fromID = ''
-        return self._crawlMain(self.url, crawlTimes, sleepTime)
+        result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
+        print(f'{levelIndentSize}[cyan]<function crwalHot() Out>[/cyan]')
+        return result
     
-    def crawlComment(self, sleepTime=None) -> None:
+    def crawlComment(self, sleepTime=None, level=0) -> None:
         r'''爬取评论的回复'''
-        print('<function crwalComment() running>')
+        levelIndentSize = ' ' * self._indentSize * level
+        print(f'{levelIndentSize}[purple]<function crwalComment() In>[/purple]')
         tempList = []
         for dt in self.data.values():
             if dt['commentCount'] == 0: continue
             dt_id = dt['id']
-            print(f'爬取{dt_id}评论回复')
+            levelIndentSize = ' ' * self._indentSize * (level+1)
+            print(f'{levelIndentSize}[yellow]爬取 id 为 {dt_id} 评论的回复[/yellow]')
             tempCCN = CrawlCzNeau()
             tempCCN.postID = dt['id']
             temp = 1
             while temp != 0:
-                temp = tempCCN._crawlMain(self.urlComment, 1, sleepTime)
+                temp = tempCCN._crawlMain(self.urlComment, 1, sleepTime, level+2)
             tempList.append((dt['id'], tempCCN.data.values(), ))
         for commentD in tempList:
             self.data[commentD[0]]['commentList'] = list(commentD[1])
+        print(f'{levelIndentSize}[cyan]<function crwalComment() Out>[/cyan]')
 
 
 ## nickname of class
