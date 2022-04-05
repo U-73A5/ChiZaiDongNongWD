@@ -124,7 +124,6 @@ class CrawlData(UserDict):
             print('[purple]<save start>[/purple]')
             console = Console()
             with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
-                time.sleep(3)
                 with open(file, 'w', encoding='utf-8') as f:
                     json.dump(self.data, f)
             print('[cyan]<save finish>[/cyan]')
