@@ -2,6 +2,8 @@
 提供CCN类
 '''
 
+from ast import Raise
+from logging import raiseExceptions
 from rich.console import Console
 from collections import UserDict
 from typing import overload
@@ -276,8 +278,11 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
                 return []
             jsonData = resp.json()
         except requests.exceptions.ProxyError:
-            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n大概率 [blue]ip[/blue] 被封了. 要等段时间或加代理.')
-            exit(-1)
+            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n大概率 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
+            raise requests.exceptions.ProxyError
+        except requests.exceptions.ChunkedEncodingError:
+            print(f'\n{levelIndentSize}An [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n服务器错误关闭。')
+            raise requests.exceptions.ChunkedEncodingError
         return jsonData['data']
     
     def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int, level: int) -> int:
