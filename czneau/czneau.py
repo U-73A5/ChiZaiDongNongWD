@@ -2,8 +2,6 @@
 提供CCN类
 '''
 
-from ast import Raise
-from logging import raiseExceptions
 from rich.console import Console
 from collections import UserDict
 from typing import overload
@@ -70,6 +68,13 @@ userAgentList = [
 "Mozilla/5.0 (SymbianOS/9.4; Series60/5.0 NokiaN97-1/20.0.019; Profile/MIDP-2.1 Configuration/CLDC-1.1) AppleWebKit/525 (KHTML, like Gecko) BrowserNG/7.1.18124",
 "Mozilla/5.0 (compatible; MSIE 9.0; Windows Phone OS 7.5; Trident/5.0; IEMobile/9.0; HTC; Titan)",
 ]
+
+
+class RaiseCountError(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+    def __str__(self) -> str:
+        return 'RaiseCountError.'
 
 
 class CrawlData(UserDict):
@@ -241,6 +246,7 @@ class CrawlStatus:
 ##
 class CrawlCzNeau(CrawlStatus, CrawlData):
     _indentSize = 2
+    _raiseEE = True
 
     @property
     def indentSize(self) -> int:
@@ -251,10 +257,38 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         except: return False
         else: return True
 
+    @property
+    def raiseEE(self) -> bool:
+        return CrawlCzNeau._raiseEE
+    @raiseEE.setter
+    def raiseEE(self, value: bool) -> bool:
+        try: CrawlCzNeau._raiseEE = value
+        except: return False
+        else: return True
+
     def __init__(self) -> None:
-        self.level = 0
+        self._errorMax = 3
+        self._errorCount = 0
         CrawlStatus.__init__(self)
         CrawlData.__init__(self)
+    
+    @property
+    def errorMax(self):
+        return self._errorMax
+    @errorMax.setter
+    def errorMax(self, value: int) -> bool:
+        try: self._errorMax = value
+        except: return False
+        else: return True
+    
+    @property
+    def errorCount(self):
+        return self._errorCount
+    @errorCount.setter
+    def errorCount(self, value: int) -> bool:
+        try: self._errorCount = value
+        except: return False
+        else: return True
     
     def _getJsonData(self, url, level=0) -> list:
         r'''获取json'''
@@ -278,11 +312,15 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
                 return []
             jsonData = resp.json()
         except requests.exceptions.ProxyError:
-            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n大概率 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
-            raise requests.exceptions.ProxyError
+            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
+            if CrawlCzNeau._raiseEE: raise requests.exceptions.ProxyError
+            if self.errorCount == self.errorMax: raise RaiseCountError
+            self.errorCount = self.errorCount + 1
         except requests.exceptions.ChunkedEncodingError:
             print(f'\n{levelIndentSize}An [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n服务器错误关闭。')
-            raise requests.exceptions.ChunkedEncodingError
+            if CrawlCzNeau._raiseEE: raise requests.exceptions.ChunkedEncodingError
+            if self.errorCount == self.errorMax: raise RaiseCountError
+            self.errorCount = self.errorCount + 1
         return jsonData['data']
     
     def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int, level: int) -> int:
