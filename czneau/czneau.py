@@ -276,7 +276,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
                 return []
             jsonData = resp.json()
         except requests.exceptions.ProxyError:
-            print('\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n大概率 [blue]ip[/blue] 被封了. 要等段时间或加代理.')
+            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n大概率 [blue]ip[/blue] 被封了. 要等段时间或加代理.')
             exit(-1)
         return jsonData['data']
     
@@ -337,6 +337,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
             tempList.append((dt['id'], tempCCN.data.values(), ))
         for commentD in tempList:
             self.data[commentD[0]]['commentList'] = list(commentD[1])
+        levelIndentSize = ' ' * self._indentSize * level
         print(f'{levelIndentSize}[cyan]<function crwalComment() Out>[/cyan]')
 
 
