@@ -303,7 +303,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
             'postId': self.postID
         }
         proxies = self.proxies
-        jsonData = {}
+        jsonData = {'data': []}
         try:
             resp = requests.get(url=url, headers=headers, params=params, proxies=proxies)
             resp.close()
