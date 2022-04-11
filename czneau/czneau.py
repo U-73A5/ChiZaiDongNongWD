@@ -4,6 +4,7 @@
 
 from rich.console import Console
 from collections import UserDict
+from rich.panel import Panel
 from typing import overload
 from rich import traceback
 from rich import print
@@ -136,6 +137,12 @@ class CrawlData(UserDict):
             print('[cyan]<save finish>[/cyan]')
         except: return False
         else: return True
+
+    def barrage(self, sleepTime: int=3) -> None:
+        for value in self.data.values():
+            outputStr = f"[yellow]{value['nickname']}[/yellow]\n[cyan]{value['content']}[/cyan]"
+            print(Panel.fit(outputStr, border_style='yellow'))
+            time.sleep(sleepTime)
 
 
 ##

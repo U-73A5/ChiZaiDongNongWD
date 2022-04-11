@@ -159,6 +159,16 @@ CCN().raiseEE = True # 是否抛出按预期捕获的异常，默认抛出
 CCN().errorMax = 3 # 当 CCN().raiseEE=False 时，异常捕获超过约定次数后抛出 RaiseCountError ，默认次数为 3 次
 ```
 </details>
+<details>
+<summary>一些没什么用函数</summary>
+
+```python
+## 弹幕输出内容，无评论
+def barrage(self,
+    sleepTime: int=3 # 默认每个对话输出后停留 3秒
+) -> None: ...
+```
+</details>
 
 
 ## 安装
