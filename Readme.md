@@ -2,6 +2,9 @@
 用于爬取[东农饭团](http://czneau.com/)上的数据。
 
 ## 样例
+<details>
+<summary>一个简单样例</summary>
+
 ```python
 import czneau
 
@@ -16,11 +19,39 @@ dld.crawlComment()
 dld.saveData('czneau.json')
 
 for key in dld: # 遍历所有内容打印键和值
-    print(key, a[key]['likeCount'])
+    print(key, dld[key]['likeCount'])
+
+dld.saveStatus('downloadStatus.json') # 保存下载状态，以在其它地方加载以继续下载
 
 # print(a.values()) # 拥有所有 dict的方法
 ```
-![process](demo/Snipaste_2022-04-05_16-27-23.png)
+![process](demo/Snipaste_2022-04-11_15-11-56.png)
+</details>
+<details>
+<summary>一个更安全的样例</summary>
+
+```python
+import czneau
+
+a = czneau.CCN()
+
+a.raiseEE = False
+try:
+    a.crawlHot(50)
+except czneau.RaiseCountError:
+    print(f'The Expect Error has raised {a.errorMax} times.')
+## WARNING:
+# 这里可以被忽视的异常只有 ProxyError 和 ChunkedEncodingError
+# 达到异常次数上限后抛出 RaiseCountError
+# 如需更保险的方式，请尝试
+#     try: a.crawlHot(50)
+#     except:
+#         # 处理异常 #
+
+a.saveData('a_data.json')
+a.saveStatus('a_status.json')
+```
+</details>
 
 ## 部分数据说明
 <details>
@@ -106,6 +137,17 @@ CCN().proxies = { # 代理设置
 CCN().pageSize = 17 # 每次请求数据大小，默认在[15, 29]内随机选取，不能超过 29
 CCN().indentSize = 4 # 用于控制输出缩进，默认为 2
 CCN().userAgent = [] # 接受一个字符串或列表，请求用户代理从这里随机选取。默认有 51条
+
+## 加载下载状态
+# 加载下载状态而不加载数据或加载非上次任务数据，均将从加载的状态出发继续下载
+CCN().loadStatus(self,
+    file: str # 状态存放地址
+) -> bool: ...
+
+## 保存下载状态
+CCN().saveStatus(self,
+    file: str # 状态存放地址
+) -> bool: ...
 ```
 </details>
 

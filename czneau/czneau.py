@@ -116,7 +116,7 @@ class CrawlData(UserDict):
     def loadData(self, file: str) -> bool:
         r'''加载json文件'''
         try:
-            print('[purple]<load start>[/purple]')
+            print('[purple]<load data start>[/purple]')
             console = Console()
             with console.status('[bold red]Start loading...') as status:
                 with open(file, 'r', encoding='utf-8') as f:
@@ -128,7 +128,7 @@ class CrawlData(UserDict):
     def saveData(self, file: str) -> bool:
         r'''保存json文件'''
         try:
-            print('[purple]<save start>[/purple]')
+            print('[purple]<save data start>[/purple]')
             console = Console()
             with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
                 with open(file, 'w', encoding='utf-8') as f:
@@ -152,7 +152,6 @@ class CrawlStatus:
         self._postId = ''
         self._url = ''
         self._proxies = None
-        pass
     
     @property
     def urlComment(self) -> str:
@@ -239,6 +238,42 @@ class CrawlStatus:
     @proxies.setter
     def proxies(self, value: dict) -> bool:
         try: self._proxies = value
+        except: return False
+        else: return True
+    
+    def loadStatus(self, file: str) -> bool:
+        r'''加载下载信息，以继续上次退出时下载任务'''
+        try:
+            print('[purple]<load download status start>[/purple]')
+            console = Console()
+            with console.status('[bold red]Start loading...') as status:
+                with open(file, 'r', encoding='utf-8') as f:
+                    downloadStatus = json.load(f)
+            self._pageSize = downloadStatus['pageSize']
+            self._fromId = downloadStatus['fromId']
+            self._postId = downloadStatus['postId']
+            self._url = downloadStatus['url']
+            self._proxies = downloadStatus['proxies']
+            print('[cyan]<load finish>[/cyan]')
+        except: return False
+        else: return True
+
+    def saveStatus(self, file: str) -> bool:
+        r'''保存当前下载信息'''
+        try:
+            print('[purple]<save data start>[/purple]')
+            downloadStatus = {
+                'pageSize': self.pageSize,
+                'fromId': self.fromID,
+                'postId': self.postID,
+                'url': self.url,
+                'proxies': self.proxies
+            }
+            console = Console()
+            with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
+                with open(file, 'w', encoding='utf-8') as f:
+                    json.dump(downloadStatus, f)
+            print('[cyan]<save finish>[/cyan]')
         except: return False
         else: return True
 
@@ -344,6 +379,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         r'''爬取最新评论'''
         levelIndentSize = ' ' * self._indentSize * level
         print(f'{levelIndentSize}[purple]<function crwalNew() In>[/purple]')
+        self.errorCount = 0
         if self.url != self.urlNew:
             self.url = self.urlNew
             self.fromID = ''
@@ -355,6 +391,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         r'''爬取热评'''
         levelIndentSize = ' ' * self._indentSize * level
         print(f'{levelIndentSize}[purple]<function crwalHot() In>[/purple]')
+        self.errorCount = 0
         if self.url != self.urlHot:
             self.url = self.urlHot
             self.fromID = ''
@@ -366,6 +403,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         r'''爬取评论的回复'''
         levelIndentSize = ' ' * self._indentSize * level
         print(f'{levelIndentSize}[purple]<function crwalComment() In>[/purple]')
+        self.errorCount = 0
         tempList = []
         for dt in self.data.values():
             if dt['commentCount'] == 0: continue
