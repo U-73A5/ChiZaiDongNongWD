@@ -261,7 +261,7 @@ class CrawlStatus:
     def saveStatus(self, file: str) -> bool:
         r'''保存当前下载信息'''
         try:
-            print('[purple]<save data start>[/purple]')
+            print('[purple]<save download status start>[/purple]')
             downloadStatus = {
                 'pageSize': self.pageSize,
                 'fromId': self.fromID,
@@ -304,11 +304,12 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
     def __init__(self) -> None:
         self._errorMax = 3
         self._errorCount = 0
+        self._errorReturn = False
         CrawlStatus.__init__(self)
         CrawlData.__init__(self)
     
     @property
-    def errorMax(self):
+    def errorMax(self) -> int:
         return self._errorMax
     @errorMax.setter
     def errorMax(self, value: int) -> bool:
@@ -317,7 +318,7 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         else: return True
     
     @property
-    def errorCount(self):
+    def errorCount(self) -> int:
         return self._errorCount
     @errorCount.setter
     def errorCount(self, value: int) -> bool:
@@ -325,9 +326,19 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         except: return False
         else: return True
     
+    @property
+    def errorReturn(self) -> bool:
+        return self._errorReturn
+    @errorReturn.setter
+    def errorReturn(self, value: bool) -> bool:
+        try: self._errorReturn = value
+        except: return False
+        else: return True
+    
     def _getJsonData(self, url, level=0) -> list:
         r'''获取json'''
         levelIndentSize = ' ' * self._indentSize * level
+        self.errorReturn = False
         headers = {
             'User-Agent': random.choice(self.userAgent),
             'Referer': self.referer,
@@ -347,15 +358,17 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
                 return []
             jsonData = resp.json()
         except requests.exceptions.ProxyError:
-            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
-            if CrawlCzNeau._raiseEE: raise requests.exceptions.ProxyError
+            print(f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n{levelIndentSize}网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
+            if CrawlCzNeau.raiseEE: raise requests.exceptions.ProxyError
             if self.errorCount == self.errorMax: raise RaiseCountError
             self.errorCount = self.errorCount + 1
+            self.errorReturn = True
         except requests.exceptions.ChunkedEncodingError:
-            print(f'\n{levelIndentSize}An [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n服务器错误关闭。')
-            if CrawlCzNeau._raiseEE: raise requests.exceptions.ChunkedEncodingError
+            print(f'\n{levelIndentSize}An [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n{levelIndentSize}服务器错误关闭。')
+            if CrawlCzNeau.raiseEE: raise requests.exceptions.ChunkedEncodingError
             if self.errorCount == self.errorMax: raise RaiseCountError
             self.errorCount = self.errorCount + 1
+            self.errorReturn = True
         return jsonData['data']
     
     def _crawlMain(self, url: str, crawlTimes: int, sleepTime: int, level: int) -> int:
@@ -367,7 +380,8 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
             with console.status(f'[bold yellow]Crawling Times:{_i}...', spinner='line', spinner_style='red') as status:
                 sleepT = random.random() * 3 if sleepTime == None else sleepTime
                 dataList = self._getJsonData(url, level+1)
-                if len(dataList) == 0: break
+                if self.errorReturn == True: continue
+                elif len(dataList) == 0: break
                 for dt in dataList:
                     self.data[dt['id']] = dt
                     self.fromID = dt['id']
