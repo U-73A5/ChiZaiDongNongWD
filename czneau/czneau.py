@@ -142,8 +142,11 @@ class CrawlData(UserDict):
         for value in self.data.values():
             outputStr = f"[yellow bold]{value['nickname']}[/yellow bold]\n[cyan]{value['content']}[/cyan]"
             if comment and value['commentCount'] != 0:
-                for vv in value['commentList']:
-                    outputStr += f"\n[yellow bold]{vv['nickname']}[/yellow bold]\n[#0066CC]{vv['content']}[/#0066CC]\n[#FF6666]LIKE: {vv['likeCount']}[/#FF6666]   [blue]TIME: {time.ctime(vv['date'])}[/blue]"
+                try:
+                    for vv in value['commentList']:
+                        outputStr += f"\n[yellow bold]{vv['nickname']}[/yellow bold]\n[#0066CC]{vv['content']}[/#0066CC]\n[#FF6666]LIKE: {vv['likeCount']}[/#FF6666]   [blue]TIME: {time.ctime(vv['date'])}[/blue]"
+                except KeyError:
+                    outputStr += f"\n[#0066CC]{value['commentCount']} comments had not been download.[/#0066CC]"
             print(Panel(outputStr,
                 border_style='blue',
                 title=time.ctime(value['date']), title_align='right',
