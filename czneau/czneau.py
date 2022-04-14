@@ -140,10 +140,10 @@ class CrawlData(UserDict):
 
     def barrage(self, sleepTime: int=3, comment: bool=True) -> None:
         for value in self.data.values():
-            outputStr = f"[yellow]{value['nickname']}[/yellow]\n[cyan]{value['content']}[/cyan]"
+            outputStr = f"[yellow bold]{value['nickname']}[/yellow bold]\n[cyan]{value['content']}[/cyan]"
             if comment and value['commentCount'] != 0:
                 for vv in value['commentList']:
-                    outputStr += f"\n[yellow]{vv['nickname']}[/yellow]\n[#0066CC]{vv['content']}[/#0066CC]\n[#FF6666]LIKE: {vv['likeCount']}[/#FF6666]"
+                    outputStr += f"\n[yellow bold]{vv['nickname']}[/yellow bold]\n[#0066CC]{vv['content']}[/#0066CC]\n[#FF6666]LIKE: {vv['likeCount']}[/#FF6666]   [blue]TIME: {time.ctime(vv['date'])}[/blue]"
             print(Panel(outputStr,
                 border_style='blue',
                 title=time.ctime(value['date']), title_align='right',
@@ -482,5 +482,14 @@ class CrawlCzNeau(CrawlStatus, CrawlData):
         print(f'{levelIndentSize}[cyan]<function crwalComment() Out>[/cyan]')
 
 
-## nickname of class
+## nicknames
 CCN = CrawlCzNeau
+
+getTime = CCN.getTime
+getDay = CCN.getDay
+getMonth = CCN.getMonth
+getDate = CCN.getDate
+getHour = CCN.getHour
+getMinute = CCN.getMinute
+getSecond = CCN.getSecond
+getYear = CCN.getYear

@@ -62,10 +62,12 @@ CCN() = {
     int() # 键值，即为 value中的 id
     :{
         'id': int(), # 使用 id 判定是否为相同数据
+        'nickname': str(), #
         'content': str(), # 评论内容
         'likeCount': int(), # 点赞数
         'commentCount': int(), # 评论数
         'commentList': list(), # 仅在 commentCount 非 0 时有该关键字，非原 json数据
+        'date': int() # 与发表时间相关
         ##...
     },
     ##...
@@ -80,8 +82,10 @@ CCN() = {
 CCN()[0]['commentList'] = [
     {
         'id': int(), # 该 id 不参与任何判断
+        'nickname': str(),
         'content': str(), # 回复内容
         'likeCount': int(), # 回复点赞数
+        'date': int() # 与发表时间相关
         ##...
     },
     ##...
@@ -123,8 +127,9 @@ def saveData(self,
     file: str # 数据存放地址
 ) -> bool:
 ```
+### 如需要评论或回复的日期，在[没什么用函数](./Readme.md#no_use_function)中查找
 
-如需要评论或回复的日期，在[没什么用函数](./Readme.md#no_use_function)中查找
+![data](demo/Snipaste_2022-04-14_17-08-22.png)
 </details>
 
 
@@ -182,6 +187,9 @@ def getMinute(x: baseData) -> int: ... # 获取信息发表时是几分  0~60
 def getSecond(x: baseData) -> int: ... # 获取信息发表时是几秒 0~60
 def getYear(x: baseData) -> int: ... # 获取信息发表在那一年 2022
 ```
+![barrage](demo/Snipaste_2022-04-14_17-09-37.png)
+![barrage_show](demo/Snipaste_2022-04-14_17-09-51.png)
+![time](demo/Snipaste_2022-04-14_17-17-21.png)
 </details>
 
 
