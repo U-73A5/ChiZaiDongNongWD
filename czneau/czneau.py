@@ -138,11 +138,50 @@ class CrawlData(UserDict):
         except: return False
         else: return True
 
-    def barrage(self, sleepTime: int=3) -> None:
+    def barrage(self, sleepTime: int=3, comment: bool=True) -> None:
         for value in self.data.values():
             outputStr = f"[yellow]{value['nickname']}[/yellow]\n[cyan]{value['content']}[/cyan]"
-            print(Panel.fit(outputStr, border_style='yellow'))
+            if comment and value['commentCount'] != 0:
+                for vv in value['commentList']:
+                    outputStr += f"\n[yellow]{vv['nickname']}[/yellow]\n[#0066CC]{vv['content']}[/#0066CC]\n[#FF6666]LIKE: {vv['likeCount']}[/#FF6666]"
+            print(Panel(outputStr,
+                border_style='blue',
+                title=time.ctime(value['date']), title_align='right',
+                subtitle=f'''LIKE: {value['likeCount']}  COMMENT: {value['commentCount']}''', subtitle_align='right'
+            ))
             time.sleep(sleepTime)
+    
+    baseData = dict # 最基本的元素
+
+    @staticmethod
+    def getTime(x: baseData) -> str:
+        r'''返回评论发表时间'''
+        return time.ctime(x['date'])
+    @staticmethod
+    def getDay(x: baseData) -> int:
+        r'''返回评论发表当天是星期几'''
+        day = {'Mon': 1,'Tue': 2,'Wed': 3,'Thu': 4,'Fri': 5,'Sat': 6,'Sun': 7}
+        return int(day[time.ctime(x['date']).split(' ')[0]])
+    @staticmethod
+    def getMonth(x: baseData) -> int:
+        mouth = {'Jan': 1,'Feb': 2,'Mar': 3,'Apr': 4,'May': 5,'Jun': 6,'Jul': 7,'Aug': 8,'Sep': 9,'Oct': 10,'Nov': 11,'Dec': 12}
+        return int(mouth[time.ctime(x['date']).split(' ')[1]])
+    @staticmethod
+    def getDate(x: baseData) -> int:
+        r'''返回评论发表当天几号'''
+        return int(time.ctime(x['date']).split(' ')[2])
+    @staticmethod
+    def getHour(x: baseData) -> int:
+        return int(time.ctime(x['date']).split(' ')[-2].split(':')[0])
+    @staticmethod
+    def getMinute(x: baseData) -> int:
+        return int(time.ctime(x['date']).split(' ')[-2].split(':')[1])
+    @staticmethod
+    def getSecond(x: baseData) -> int:
+        return int(time.ctime(x['date']).split(' ')[-2].split(':')[-1])
+    @staticmethod
+    def getYear(x: baseData) -> int:
+        return int(time.ctime(x['date']).split(' ')[-1])
 
 
 ##

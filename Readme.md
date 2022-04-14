@@ -123,6 +123,8 @@ def saveData(self,
     file: str # 数据存放地址
 ) -> bool:
 ```
+
+如需要评论或回复的日期，在[没什么用函数](./Readme.md#no_use_function)中查找
 </details>
 
 
@@ -161,12 +163,24 @@ CCN().errorMax = 3 # 当 CCN().raiseEE=False 时，异常捕获超过约定次�
 </details>
 <details>
 <summary>一些没什么用函数</summary>
+<a href='#no_use_function'></a>
 
 ```python
-## 弹幕输出内容，无评论
+## 弹幕输出内容，就是玩
 def barrage(self,
     sleepTime: int=3 # 默认每个对话输出后停留 3秒
+    comment: bool=True # 输出是否包含回复，默认包含
 ) -> None: ...
+
+## baseData 为 CCN() 实例中的每一个元素
+def getTime(x: baseData) -> str: ... # 获取评论或回复时间 'Thu Apr 14 16:41:12 2022'
+def getDay(x: baseData) -> int: ... # 获取信息发表当天是星期几 1~7
+def getMonth(x: baseData) -> int: ... # 获取信息发表当天是几月 1~12
+def getDate(x: baseData) -> int: ... # 获取信息发表当天是记号 1~28/29/30/31
+def getHour(x: baseData) -> int: ... # 获取信息发表时是几时 0~24
+def getMinute(x: baseData) -> int: ... # 获取信息发表时是几分  0~60
+def getSecond(x: baseData) -> int: ... # 获取信息发表时是几秒 0~60
+def getYear(x: baseData) -> int: ... # 获取信息发表在那一年 2022
 ```
 </details>
 
