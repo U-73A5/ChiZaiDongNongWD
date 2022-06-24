@@ -1,0 +1,9 @@
+# build file
+czneau.egg-info
+dist
+
+# temp file
+__pycache__
+
+# test file
+testFile.py
