@@ -1,7 +1,9 @@
 # ChiZaiDongNongWD
+
 用于爬取[东农饭团](http://czneau.com/)上的数据。
 
 ## 样例
+
 <details>
 <summary>一个简单样例</summary>
 
@@ -25,6 +27,7 @@ dld.saveStatus('downloadStatus.json') # 保存下载状态，以在其它地方�
 
 # print(a.values()) # 拥有所有 dict的方法
 ```
+
 ![process](demo/Snipaste_2022-04-11_15-11-56.png)
 </details>
 <details>
@@ -51,9 +54,11 @@ except czneau.RaiseCountError:
 a.saveData('a_data.json')
 a.saveStatus('a_status.json')
 ```
+
 </details>
 
 ## 部分数据说明
+
 <details>
 <summary>获取评论保持原json数据不变。</summary>
 
@@ -73,6 +78,7 @@ CCN() = {
     ##...
 }
 ```
+
 </details>
 <details>
 <summary>获取的回复添加在原json数据中。</summary>
@@ -91,9 +97,11 @@ CCN()[0]['commentList'] = [
     ##...
 ]
 ```
+
 </details>
 
 ## 额外接口说明
+
 <details>
 <summary>数据相关</summary>
 
@@ -127,6 +135,7 @@ def saveData(self,
     file: str # 数据存放地址
 ) -> bool:
 ```
+
 ### 如需要评论或回复的日期，在[没什么用函数](./Readme.md#no_use_function)中查找
 
 ![data](demo/Snipaste_2022-04-14_17-08-22.png)
@@ -156,6 +165,7 @@ CCN().saveStatus(self,
     file: str # 状态存放地址
 ) -> bool: ...
 ```
+
 </details>
 
 <details>
@@ -165,6 +175,7 @@ CCN().saveStatus(self,
 CCN().raiseEE = True # 是否抛出按预期捕获的异常，默认抛出
 CCN().errorMax = 3 # 当 CCN().raiseEE=False 时，异常捕获超过约定次数后抛出 RaiseCountError ，默认次数为 3 次
 ```
+
 </details>
 <details>
 <summary>一些没什么用函数</summary>
@@ -187,6 +198,7 @@ def getMinute(x: baseData) -> int: ... # 获取信息发表时是几分  0~60
 def getSecond(x: baseData) -> int: ... # 获取信息发表时是几秒 0~60
 def getYear(x: baseData) -> int: ... # 获取信息发表在那一年 2022
 ```
+
 ![barrage](demo/Snipaste_2022-04-14_17-09-37.png)
 ![barrage_show](demo/Snipaste_2022-04-14_17-09-51.png)
 ![time](demo/Snipaste_2022-04-14_17-17-21.png)
@@ -194,6 +206,7 @@ def getYear(x: baseData) -> int: ... # 获取信息发表在那一年 2022
 
 
 ## 安装
+
 ```bash
 pip install czneau
 ```

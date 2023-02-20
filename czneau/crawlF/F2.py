@@ -1,6 +1,5 @@
 '''
-东农饭团http://czneau.com/
-Xcard猹卡http://xcard.czneau.com/
+微博_东北农业大学超话https://m.weibo.cn/p/index?containerid=10080822c440b7dcfa3683e7a50bcdbfe7159a
 '''
 
 from ..refer import *
@@ -17,17 +16,14 @@ def crawl(x: dict) -> Any:
         def __getitem__(self, key: Union[int, str]) -> Any:
             return super().__getitem__(key)
 
-        def __setitem__(self, key: Union[int, str, tuple], item: Any) -> None:
+        def __setitem__(self, key: Union[int, str], item: Any) -> None:
             return super().__setitem__(key, item)
 
         def __delitem__(self, key: Union[int, str]) -> None:
             return super().__delitem__(key)
 
-        def __iter__(self):
+        def __iter__(self) -> Iterator[Union[int, str]]:
             return super().__iter__()
-
-        def __repr__(self):
-            return f'{type(self).__name__}({repr(self.data)})'
 
         def loadData(self, file: str) -> bool:
             r'''加载json文件'''
@@ -57,72 +53,16 @@ def crawl(x: dict) -> Any:
             else:
                 return True
 
-        def barrage(self, sleepTime: int = 3, comment: bool = True) -> None:
-            for value in self.data.values():
-                outputStr = f"[yellow bold]{value['nickname']}[/yellow bold]\n[cyan]{value['content']}[/cyan]"
-                if comment and value['commentCount'] != 0:
-                    try:
-                        for vv in value['commentList']:
-                            outputStr += f"\n[yellow bold]{vv['nickname']}[/yellow bold]\n[#0066CC]{vv['content']}[/#0066CC]\n[#FF6666]LIKE: {vv['likeCount']}[/#FF6666]   [blue]TIME: {time.ctime(vv['date'])}[/blue]"
-                    except KeyError:
-                        outputStr += f"\n[#0066CC]{value['commentCount']} comments had not been download.[/#0066CC]"
-                rich.print(Panel(outputStr,
-                                 border_style='blue',
-                                 title=time.ctime(value['date']), title_align='right',
-                                 subtitle=f'''LIKE: {value['likeCount']}  COMMENT: {value['commentCount']}''', subtitle_align='right'
-                                 ))
-                time.sleep(sleepTime)
-
-        @staticmethod
-        def getTime(x: dict) -> str:
-            r'''返回评论发表时间'''
-            return time.ctime(x['date'])
-
-        @staticmethod
-        def getDay(x: dict) -> int:
-            r'''返回评论发表当天是星期几'''
-            day = {'Mon': 1, 'Tue': 2, 'Wed': 3,
-                   'Thu': 4, 'Fri': 5, 'Sat': 6, 'Sun': 7}
-            return int(day[time.ctime(x['date']).split(' ')[0]])
-
-        @staticmethod
-        def getMonth(x: dict) -> int:
-            mouth = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
-                     'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
-            return int(mouth[time.ctime(x['date']).split(' ')[1]])
-
-        @staticmethod
-        def getDate(x: dict) -> int:
-            r'''返回评论发表当天几号'''
-            return int(time.ctime(x['date']).split(' ')[2])
-
-        @staticmethod
-        def getHour(x: dict) -> int:
-            return int(time.ctime(x['date']).split(' ')[-2].split(':')[0])
-
-        @staticmethod
-        def getMinute(x: dict) -> int:
-            return int(time.ctime(x['date']).split(' ')[-2].split(':')[1])
-
-        @staticmethod
-        def getSecond(x: dict) -> int:
-            return int(time.ctime(x['date']).split(' ')[-2].split(':')[-1])
-
-        @staticmethod
-        def getYear(x: dict) -> int:
-            return int(time.ctime(x['date']).split(' ')[-1])
-
     class CrawlStatus(StatusContent):
         _urlComment = x['_urlComment']
+        _urlFeed = x['_urlFeed']
         _urlNew = x['_urlNew']
         _urlHot = x['_urlHot']
-        _referer = x['_referer']
+        _urlEssence = x['_urlEssence']
         _userAgent = userAgentList
 
         def __init__(self) -> None:
-            self._pageSize = 0  # this must less than 30
-            self._fromId = ''
-            self._postId = ''
+            self._id = 0
             self._url = ''
             self._proxies: Optional[dict] = None
 
@@ -134,6 +74,19 @@ def crawl(x: dict) -> Any:
         def urlComment(self, url: str) -> bool:
             try:
                 CrawlStatus._urlComment = url
+            except:
+                return False
+            else:
+                return True
+
+        @property
+        def urlFeed(self) -> str:
+            return CrawlStatus._urlFeed
+
+        @urlFeed.setter
+        def urlFeed(self, url: str) -> bool:
+            try:
+                CrawlStatus._urlFeed = url
             except:
                 return False
             else:
@@ -166,14 +119,13 @@ def crawl(x: dict) -> Any:
                 return True
 
         @property
-        def referer(self) -> str:
-            r'''防盗链'''
-            return CrawlStatus._referer
+        def urlEssence(self) -> str:
+            return CrawlStatus._urlEssence
 
-        @referer.setter
-        def referer(self, value: str) -> bool:
+        @urlEssence.setter
+        def urlEssence(self, url: str) -> bool:
             try:
-                CrawlStatus._referer = value
+                CrawlStatus._urlEssence = url
             except:
                 return False
             else:
@@ -181,7 +133,6 @@ def crawl(x: dict) -> Any:
 
         @property
         def userAgent(self) -> list:
-            r'''User-Agent of headers'''
             return CrawlStatus._userAgent
 
         @userAgent.setter
@@ -195,45 +146,13 @@ def crawl(x: dict) -> Any:
                 return True
 
         @property
-        def pageSize(self) -> int:
-            r'''大小介于[1,30), 默认29'''
-            return self._pageSize
+        def id(self) -> str:
+            return self._id
 
-        @pageSize.setter
-        def pageSize(self, value) -> bool:
-            if type(value) == str:
-                value = int(value)
-            if value <= 0 or value >= 30:
-                rich.print('The size of page must in interval [1, 30)')
-                return False
+        @id.setter
+        def id(self, value: str) -> bool:
             try:
-                self._pageSize = value
-            except:
-                return False
-            else:
-                return True
-
-        @property
-        def fromID(self) -> str:
-            return self._fromId
-
-        @fromID.setter
-        def fromID(self, value) -> bool:
-            try:
-                self._fromId = value if type(value) == str else f'{value}'
-            except:
-                return False
-            else:
-                return True
-
-        @property
-        def postID(self) -> str:
-            return self._postId
-
-        @postID.setter
-        def postID(self, value) -> bool:
-            try:
-                self._postId = value if type(value) == str else f'{value}'
+                self._id = value
             except:
                 return False
             else:
@@ -265,45 +184,11 @@ def crawl(x: dict) -> Any:
             else:
                 return True
 
-        def loadStatus(self, file: str) -> bool:
-            r'''加载下载信息，以继续上次退出时下载任务'''
-            try:
-                rich.print('[purple]<load download status start>[/purple]')
-                console = Console()
-                with console.status('[bold red]Start loading...') as status:
-                    with open(file, 'r', encoding='utf-8') as f:
-                        downloadStatus = json.load(f)
-                self._pageSize = downloadStatus['pageSize']
-                self._fromId = downloadStatus['fromId']
-                self._postId = downloadStatus['postId']
-                self._url = downloadStatus['url']
-                self._proxies = downloadStatus['proxies']
-                rich.print('[cyan]<load finish>[/cyan]')
-            except:
-                return False
-            else:
-                return True
+        def loadStatus(self, file):
+            return super().loadStatus(file)
 
-        def saveStatus(self, file: str) -> bool:
-            r'''保存当前下载信息'''
-            try:
-                rich.print('[purple]<save download status start>[/purple]')
-                downloadStatus = {
-                    'pageSize': self.pageSize,
-                    'fromId': self.fromID,
-                    'postId': self.postID,
-                    'url': self.url,
-                    'proxies': self.proxies
-                }
-                console = Console()
-                with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
-                    with open(file, 'w', encoding='utf-8') as f:
-                        json.dump(downloadStatus, f)
-                rich.print('[cyan]<save finish>[/cyan]')
-            except:
-                return False
-            else:
-                return True
+        def saveStatus(self, file):
+            return super().saveStatus(file)
 
     class Crawl(CrawlStatus, CrawlData):
         _indentSize = 2
@@ -381,18 +266,15 @@ def crawl(x: dict) -> Any:
             else:
                 return True
 
-        def _getJsonData(self, url, level=0) -> list:
-            r'''获取json'''
+        def _getJsonData(self, url, level=0) -> dict:
             levelIndentSize = ' ' * self._indentSize * level
             self.errorReturn = False
             headers = {
                 'User-Agent': random.choice(self.userAgent),
-                'Referer': self.referer,
             }
             params = {
-                'pageSize': random.randint(15, 29) if self.pageSize == 0 else self.pageSize,
-                'fromId': self.fromID,
-                'postId': self.postID
+                'id': self.id,
+                'mid': self.id,
             }
             proxies = self.proxies
             jsonData: dict = {'data': []}
@@ -426,79 +308,101 @@ def crawl(x: dict) -> Any:
             return jsonData['data']
 
         def _crawlMain(self, url: str, crawlTimes: int, sleepTime: Optional[float], level: int) -> int:
-            r'''爬虫主循环'''
             levelIndentSize = ' ' * self._indentSize * level
-            dataList = []
+            dataDir = {}
             for _i in range(crawlTimes):
                 console = Console()
                 with console.status(f'[bold yellow]Crawling Times:{_i}...', spinner='line', spinner_style='red') as status:
                     sleepT: float = random.random() * 3 if sleepTime == None else sleepTime
-                    dataList = self._getJsonData(url, level+1)
+                    dataDir = self._getJsonData(url, level+1)
                     if self.errorReturn == True:
                         continue
-                    elif len(dataList) == 0:
+                    elif len(dataDir) == 0:
                         break
-                    for dt in dataList:
-                        self.data[dt['id']] = dt
-                        self.fromID = dt['id']
+                    for dt in dataDir['cards']:
+                        if dt['card_type'] != '9':
+                            continue
+                        #TODO card_type == 11
+                        self.data[dt['mblog']['id']] = dt['mblog']
                     time.sleep(sleepT)
                 rich.print(
-                    f'{levelIndentSize}[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {len(dataList)} dates.[/yellow]')
-            return len(dataList)
+                    f'{levelIndentSize}[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {len(dataDir)} dates.[/yellow]')
+            return len(dataDir)
+
+        def crawlFeed(self, crawlTimes=1, sleepTime=None, level=0) -> int:
+            levelIndentSize = ' ' * self.indentSize * level
+            rich.print(
+                f'{levelIndentSize}[purple]<function crawlFeed In>[/purple]')
+            self.errorCount = 0
+            if self.url != self.urlFeed:
+                self.url = self.urlFeed
+            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
+            rich.print(
+                f'{levelIndentSize}[cyan]<function crawlFeed Out>[/cyan]')
+            return result
 
         def crawlNew(self, crawlTimes=1, sleepTime=None, level=0) -> int:
-            r'''爬取最新评论'''
-            levelIndentSize = ' ' * self._indentSize * level
+            levelIndentSize = ' ' * self.indentSize * level
             rich.print(
-                f'{levelIndentSize}[purple]<function crwalNew() In>[/purple]')
+                f'{levelIndentSize}[purple]<function crawlNew In>[/purple]')
             self.errorCount = 0
             if self.url != self.urlNew:
                 self.url = self.urlNew
-                self.fromID = ''
             result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
             rich.print(
-                f'{levelIndentSize}[cyan]<function crwalNew() Out>[/cyan]')
+                f'{levelIndentSize}[cyan]<function crawlNew Out>[/cyan]')
             return result
 
         def crawlHot(self, crawlTimes=1, sleepTime=None, level=0) -> int:
-            r'''爬取热评'''
-            levelIndentSize = ' ' * self._indentSize * level
+            levelIndentSize = ' ' * self.indentSize * level
             rich.print(
-                f'{levelIndentSize}[purple]<function crwalHot() In>[/purple]')
+                f'{levelIndentSize}[purple]<function crawlHot In>[/purple]')
             self.errorCount = 0
             if self.url != self.urlHot:
                 self.url = self.urlHot
-                self.fromID = ''
             result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
             rich.print(
-                f'{levelIndentSize}[cyan]<function crwalHot() Out>[/cyan]')
+                f'{levelIndentSize}[cyan]<function crawlHot Out>[/cyan]')
+            return result
+
+        def crawlEssence(self, crawlTimes=1, sleepTime=None, level=0) -> int:
+            levelIndentSize = ' ' * self.indentSize * level
+            rich.print(
+                f'{levelIndentSize}[purple]<function crawlEssence In>[/purple]')
+            self.errorCount = 0
+            if self.url != self.urlEssence:
+                self.url = self.urlEssence
+            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
+            rich.print(
+                f'{levelIndentSize}[cyan]<function crawlEssence Out>[/cyan]')
             return result
 
         def crawlComment(self, sleepTime=None, level=0) -> None:
-            r'''爬取评论的回复'''
             levelIndentSize = ' ' * self._indentSize * level
             rich.print(
                 f'{levelIndentSize}[purple]<function crwalComment() In>[/purple]')
             self.errorCount = 0
             tempList = []
             for dt in self.data.values():
-                if dt['commentCount'] == 0:
+                if dt['comments_count'] == 0:
                     continue
                 dt_id = dt['id']
                 levelIndentSize = ' ' * self._indentSize * (level+1)
                 rich.print(
                     f'{levelIndentSize}[yellow]爬取 id 为 {dt_id} 评论的回复[/yellow]')
-                tempCCN = Crawl()
-                tempCCN.postID = dt['id']
-                temp = 1
-                while temp != 0:
-                    temp = tempCCN._crawlMain(
-                        self.urlComment, 1, sleepTime, level+2)
-                tempList.append((dt['id'], tempCCN.data.values(), ))
+                tempWBDC = Crawl()
+                tempWBDC.id = dt['id']
+                try:
+                    tempWBDC._getJsonData(self.urlComment, level+1)
+                except:
+                    print('Comment | _getJsonData')
+                    raise
+                time.sleep(random.random())
+                tempList.append((dt['id'], tempWBDC.data.values(), ))
             for commentD in tempList:
                 self.data[commentD[0]]['commentList'] = list(commentD[1])
             levelIndentSize = ' ' * self._indentSize * level
             rich.print(
                 f'{levelIndentSize}[cyan]<function crwalComment() Out>[/cyan]')
-    
+
     return Crawl

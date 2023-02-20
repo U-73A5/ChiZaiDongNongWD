@@ -9,7 +9,7 @@ import time
 import json
 from rich.console import Console
 from rich.panel import Panel
-from typing import Union, Optional, Any, Generator
+from typing import (Union, Optional, Any, Generator, Iterator)
 from collections import UserDict
 from abc import ABC, abstractmethod
 
@@ -81,11 +81,11 @@ class RaiseCountError(Exception):
 class StatusContent(ABC):
     @abstractmethod
     def saveStatus(self, file):
-        pass
+        print('No need to save.')
 
     @abstractmethod
     def loadStatus(self, file):
-        pass
+        print('No need to load.')
 
 
 class AnalyseContent(ABC):
@@ -95,4 +95,4 @@ class AnalyseContent(ABC):
         :param data: The path of data file or data itself
         :raturns: A generator that traverse data
         '''
-        pass
+        raise StopIteration
