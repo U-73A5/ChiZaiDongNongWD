@@ -1,4 +1,4 @@
-from .czneau import (CCN, CzneauAnalyse)
+from .__init__ import *
 import sys
 
 def help():

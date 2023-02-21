@@ -29,29 +29,27 @@ def crawl(x: dict) -> Any:
         def __repr__(self):
             return f'{type(self).__name__}({repr(self.data)})'
 
+        @terminalInfo
         def loadData(self, file: str) -> bool:
             r'''加载json文件'''
             try:
-                rich.rich.print('[purple]<load data start>[/purple]')
                 console = Console()
-                with console.status('[bold red]Start loading...') as status:
+                with console.status('[bold red]Loading...') as status:
                     with open(file, 'r', encoding='utf-8') as f:
                         self.data = json.load(f)
-                rich.rich.print('[cyan]<load finish>[/cyan]')
             except:
                 return False
             else:
                 return True
 
+        @terminalInfo
         def saveData(self, file: str) -> bool:
             r'''保存json文件'''
             try:
-                rich.rich.print('[purple]<save data start>[/purple]')
                 console = Console()
-                with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
+                with console.status(f'[bold red]Saveing...', spinner_style='blue') as status:
                     with open(file, 'w', encoding='utf-8') as f:
                         json.dump(self.data, f)
-                rich.rich.print('[cyan]<save finish>[/cyan]')
             except:
                 return False
             else:
@@ -265,12 +263,12 @@ def crawl(x: dict) -> Any:
             else:
                 return True
 
+        @terminalInfo
         def loadStatus(self, file: str) -> bool:
             r'''加载下载信息，以继续上次退出时下载任务'''
             try:
-                rich.print('[purple]<load download status start>[/purple]')
                 console = Console()
-                with console.status('[bold red]Start loading...') as status:
+                with console.status('[bold red]Loading...') as status:
                     with open(file, 'r', encoding='utf-8') as f:
                         downloadStatus = json.load(f)
                 self._pageSize = downloadStatus['pageSize']
@@ -278,16 +276,15 @@ def crawl(x: dict) -> Any:
                 self._postId = downloadStatus['postId']
                 self._url = downloadStatus['url']
                 self._proxies = downloadStatus['proxies']
-                rich.print('[cyan]<load finish>[/cyan]')
             except:
                 return False
             else:
                 return True
 
+        @terminalInfo
         def saveStatus(self, file: str) -> bool:
             r'''保存当前下载信息'''
             try:
-                rich.print('[purple]<save download status start>[/purple]')
                 downloadStatus = {
                     'pageSize': self.pageSize,
                     'fromId': self.fromID,
@@ -296,31 +293,16 @@ def crawl(x: dict) -> Any:
                     'proxies': self.proxies
                 }
                 console = Console()
-                with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
+                with console.status(f'[bold red]Saveing...', spinner_style='blue') as status:
                     with open(file, 'w', encoding='utf-8') as f:
                         json.dump(downloadStatus, f)
-                rich.print('[cyan]<save finish>[/cyan]')
             except:
                 return False
             else:
                 return True
 
     class Crawl(CrawlStatus, CrawlData):
-        _indentSize = 2
         _raiseEE = True
-
-        @property
-        def indentSize(self) -> int:
-            return Crawl._indentSize
-
-        @indentSize.setter
-        def indentSize(self, value: int) -> bool:
-            try:
-                Crawl._indentSize = value
-            except:
-                return False
-            else:
-                return True
 
         @property
         def raiseEE(self) -> bool:
@@ -381,9 +363,8 @@ def crawl(x: dict) -> Any:
             else:
                 return True
 
-        def _getJsonData(self, url, level=0) -> list:
+        def _getJsonData(self, url) -> list:
             r'''获取json'''
-            levelIndentSize = ' ' * self._indentSize * level
             self.errorReturn = False
             headers = {
                 'User-Agent': random.choice(self.userAgent),
@@ -402,12 +383,12 @@ def crawl(x: dict) -> Any:
                 resp.close()
                 if resp.status_code != 200:
                     rich.print(
-                        f'\n{levelIndentSize}Response Status Code: [red]{resp.status_code}[/red]')
+                        f'\nResponse Status Code: [red]{resp.status_code}[/red]')
                     return []
                 jsonData = resp.json()
             except requests.exceptions.ProxyError:
                 rich.print(
-                    f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n{levelIndentSize}网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
+                    f'\nAn [red bold]ProxyError[/red bold] Raised As Expected.\n网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
                 if Crawl.raiseEE:
                     raise requests.exceptions.ProxyError
                 if self.errorCount == self.errorMax:
@@ -416,7 +397,7 @@ def crawl(x: dict) -> Any:
                 self.errorReturn = True
             except requests.exceptions.ChunkedEncodingError:
                 rich.print(
-                    f'\n{levelIndentSize}An [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n{levelIndentSize}服务器错误关闭。')
+                    f'\nAn [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n服务器错误关闭。')
                 if Crawl.raiseEE:
                     raise requests.exceptions.ChunkedEncodingError
                 if self.errorCount == self.errorMax:
@@ -425,15 +406,14 @@ def crawl(x: dict) -> Any:
                 self.errorReturn = True
             return jsonData['data']
 
-        def _crawlMain(self, url: str, crawlTimes: int, sleepTime: Optional[float], level: int) -> int:
+        def _crawlMain(self, url: str, crawlTimes: int, sleepTime: Optional[float]) -> int:
             r'''爬虫主循环'''
-            levelIndentSize = ' ' * self._indentSize * level
             dataList = []
             for _i in range(crawlTimes):
                 console = Console()
                 with console.status(f'[bold yellow]Crawling Times:{_i}...', spinner='line', spinner_style='red') as status:
                     sleepT: float = random.random() * 3 if sleepTime == None else sleepTime
-                    dataList = self._getJsonData(url, level+1)
+                    dataList = self._getJsonData(url)
                     if self.errorReturn == True:
                         continue
                     elif len(dataList) == 0:
@@ -443,62 +423,46 @@ def crawl(x: dict) -> Any:
                         self.fromID = dt['id']
                     time.sleep(sleepT)
                 rich.print(
-                    f'{levelIndentSize}[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {len(dataList)} dates.[/yellow]')
+                    f'[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {len(dataList)} datas.[/yellow]')
             return len(dataList)
 
+        @terminalInfo
         def crawlNew(self, crawlTimes=1, sleepTime=None, level=0) -> int:
             r'''爬取最新评论'''
-            levelIndentSize = ' ' * self._indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crwalNew() In>[/purple]')
             self.errorCount = 0
             if self.url != self.urlNew:
                 self.url = self.urlNew
                 self.fromID = ''
-            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crwalNew() Out>[/cyan]')
+            result = self._crawlMain(self.url, crawlTimes, sleepTime)
             return result
 
+        @terminalInfo
         def crawlHot(self, crawlTimes=1, sleepTime=None, level=0) -> int:
             r'''爬取热评'''
-            levelIndentSize = ' ' * self._indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crwalHot() In>[/purple]')
             self.errorCount = 0
             if self.url != self.urlHot:
                 self.url = self.urlHot
                 self.fromID = ''
-            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crwalHot() Out>[/cyan]')
+            result = self._crawlMain(self.url, crawlTimes, sleepTime)
             return result
 
-        def crawlComment(self, sleepTime=None, level=0) -> None:
+        @terminalInfo
+        def crawlComment(self, sleepTime=None) -> None:
             r'''爬取评论的回复'''
-            levelIndentSize = ' ' * self._indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crwalComment() In>[/purple]')
             self.errorCount = 0
             tempList = []
             for dt in self.data.values():
                 if dt['commentCount'] == 0:
                     continue
                 dt_id = dt['id']
-                levelIndentSize = ' ' * self._indentSize * (level+1)
-                rich.print(
-                    f'{levelIndentSize}[yellow]爬取 id 为 {dt_id} 评论的回复[/yellow]')
+                rich.print(f'[yellow]爬取 id 为 {dt_id} 评论的回复[/yellow]')
                 tempCCN = Crawl()
                 tempCCN.postID = dt['id']
                 temp = 1
                 while temp != 0:
-                    temp = tempCCN._crawlMain(
-                        self.urlComment, 1, sleepTime, level+2)
+                    temp = tempCCN._crawlMain(self.urlComment, 1, sleepTime)
                 tempList.append((dt['id'], tempCCN.data.values(), ))
             for commentD in tempList:
                 self.data[commentD[0]]['commentList'] = list(commentD[1])
-            levelIndentSize = ' ' * self._indentSize * level
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crwalComment() Out>[/cyan]')
-    
+
     return Crawl

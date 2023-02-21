@@ -25,29 +25,27 @@ def crawl(x: dict) -> Any:
         def __iter__(self) -> Iterator[Union[int, str]]:
             return super().__iter__()
 
+        @terminalInfo
         def loadData(self, file: str) -> bool:
             r'''加载json文件'''
             try:
-                rich.rich.print('[purple]<load data start>[/purple]')
                 console = Console()
-                with console.status('[bold red]Start loading...') as status:
+                with console.status('[bold red]Loading...') as status:
                     with open(file, 'r', encoding='utf-8') as f:
                         self.data = json.load(f)
-                rich.rich.print('[cyan]<load finish>[/cyan]')
             except:
                 return False
             else:
                 return True
 
+        @terminalInfo
         def saveData(self, file: str) -> bool:
             r'''保存json文件'''
             try:
-                rich.rich.print('[purple]<save data start>[/purple]')
                 console = Console()
-                with console.status(f'[bold red]Start saveing...', spinner_style='blue') as status:
+                with console.status(f'[bold red]Saveing...', spinner_style='blue') as status:
                     with open(file, 'w', encoding='utf-8') as f:
                         json.dump(self.data, f)
-                rich.rich.print('[cyan]<save finish>[/cyan]')
             except:
                 return False
             else:
@@ -191,21 +189,7 @@ def crawl(x: dict) -> Any:
             return super().saveStatus(file)
 
     class Crawl(CrawlStatus, CrawlData):
-        _indentSize = 2
         _raiseEE = True
-
-        @property
-        def indentSize(self) -> int:
-            return Crawl._indentSize
-
-        @indentSize.setter
-        def indentSize(self, value: int) -> bool:
-            try:
-                Crawl._indentSize = value
-            except:
-                return False
-            else:
-                return True
 
         @property
         def raiseEE(self) -> bool:
@@ -266,8 +250,7 @@ def crawl(x: dict) -> Any:
             else:
                 return True
 
-        def _getJsonData(self, url, level=0) -> dict:
-            levelIndentSize = ' ' * self._indentSize * level
+        def _getJsonData(self, url) -> dict:
             self.errorReturn = False
             headers = {
                 'User-Agent': random.choice(self.userAgent),
@@ -284,12 +267,12 @@ def crawl(x: dict) -> Any:
                 resp.close()
                 if resp.status_code != 200:
                     rich.print(
-                        f'\n{levelIndentSize}Response Status Code: [red]{resp.status_code}[/red]')
+                        f'\nResponse Status Code: [red]{resp.status_code}[/red]')
                     return []
                 jsonData = resp.json()
             except requests.exceptions.ProxyError:
                 rich.print(
-                    f'\n{levelIndentSize}An [red bold]ProxyError[/red bold] Raised As Expected.\n{levelIndentSize}网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
+                    f'\nAn [red bold]ProxyError[/red bold] Raised As Expected.\n网络不稳定或 [blue]ip[/blue] 被封了. 要等段时间或加代理。')
                 if Crawl.raiseEE:
                     raise requests.exceptions.ProxyError
                 if self.errorCount == self.errorMax:
@@ -298,102 +281,86 @@ def crawl(x: dict) -> Any:
                 self.errorReturn = True
             except requests.exceptions.ChunkedEncodingError:
                 rich.print(
-                    f'\n{levelIndentSize}An [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n{levelIndentSize}服务器错误关闭。')
+                    f'\nAn [red bold]ChunkedEncodingError[/red bold] Raised As Expected.\n服务器错误关闭。')
                 if Crawl.raiseEE:
                     raise requests.exceptions.ChunkedEncodingError
                 if self.errorCount == self.errorMax:
                     raise RaiseCountError
                 self.errorCount = self.errorCount + 1
                 self.errorReturn = True
-            return jsonData['data']
+            return (jsonData['data'] if (
+                isinstance(jsonData, dict) and ('data' in jsonData.keys())
+                ) else {'cards': {}})
 
-        def _crawlMain(self, url: str, crawlTimes: int, sleepTime: Optional[float], level: int) -> int:
-            levelIndentSize = ' ' * self._indentSize * level
+        def _crawlMain(self, url: str, crawlTimes: int, sleepTime: Optional[float]) -> int:
             dataDir = {}
             for _i in range(crawlTimes):
                 console = Console()
                 with console.status(f'[bold yellow]Crawling Times:{_i}...', spinner='line', spinner_style='red') as status:
                     sleepT: float = random.random() * 3 if sleepTime == None else sleepTime
-                    dataDir = self._getJsonData(url, level+1)
+                    dataDir = self._getJsonData(url)
                     if self.errorReturn == True:
                         continue
-                    elif len(dataDir) == 0:
+                    elif len(dataDir)==0:
                         break
+                    dataNum = 0
                     for dt in dataDir['cards']:
                         if dt['card_type'] != '9':
                             continue
                         #TODO card_type == 11
+                        dataNum += 1
                         self.data[dt['mblog']['id']] = dt['mblog']
                     time.sleep(sleepT)
                 rich.print(
-                    f'{levelIndentSize}[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {len(dataDir)} dates.[/yellow]')
-            return len(dataDir)
+                    f'[yellow]{_i}: Crawl finish. Sleep {sleepT} second. Crawl {dataNum} dates.[/yellow]')
+            return dataNum
 
-        def crawlFeed(self, crawlTimes=1, sleepTime=None, level=0) -> int:
-            levelIndentSize = ' ' * self.indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crawlFeed In>[/purple]')
+        @terminalInfo
+        def crawlFeed(self, crawlTimes=1, sleepTime=None) -> int:
             self.errorCount = 0
             if self.url != self.urlFeed:
                 self.url = self.urlFeed
-            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crawlFeed Out>[/cyan]')
+            result = self._crawlMain(self.url, crawlTimes, sleepTime)
             return result
 
-        def crawlNew(self, crawlTimes=1, sleepTime=None, level=0) -> int:
-            levelIndentSize = ' ' * self.indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crawlNew In>[/purple]')
+        @terminalInfo
+        def crawlNew(self, crawlTimes=1, sleepTime=None) -> int:
             self.errorCount = 0
             if self.url != self.urlNew:
                 self.url = self.urlNew
-            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crawlNew Out>[/cyan]')
+            result = self._crawlMain(self.url, crawlTimes, sleepTime)
             return result
 
-        def crawlHot(self, crawlTimes=1, sleepTime=None, level=0) -> int:
-            levelIndentSize = ' ' * self.indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crawlHot In>[/purple]')
+        @terminalInfo
+        def crawlHot(self, crawlTimes=1, sleepTime=None) -> int:
             self.errorCount = 0
             if self.url != self.urlHot:
                 self.url = self.urlHot
-            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crawlHot Out>[/cyan]')
+            result = self._crawlMain(self.url, crawlTimes, sleepTime)
             return result
 
-        def crawlEssence(self, crawlTimes=1, sleepTime=None, level=0) -> int:
-            levelIndentSize = ' ' * self.indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crawlEssence In>[/purple]')
+        @terminalInfo
+        def crawlEssence(self, crawlTimes=1, sleepTime=None) -> int:
             self.errorCount = 0
             if self.url != self.urlEssence:
                 self.url = self.urlEssence
-            result = self._crawlMain(self.url, crawlTimes, sleepTime, level+1)
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crawlEssence Out>[/cyan]')
+            result = self._crawlMain(self.url, crawlTimes, sleepTime)
             return result
 
-        def crawlComment(self, sleepTime=None, level=0) -> None:
-            levelIndentSize = ' ' * self._indentSize * level
-            rich.print(
-                f'{levelIndentSize}[purple]<function crwalComment() In>[/purple]')
+        @terminalInfo
+        def crawlComment(self, sleepTime=None) -> None:
             self.errorCount = 0
             tempList = []
             for dt in self.data.values():
                 if dt['comments_count'] == 0:
                     continue
                 dt_id = dt['id']
-                levelIndentSize = ' ' * self._indentSize * (level+1)
                 rich.print(
-                    f'{levelIndentSize}[yellow]爬取 id 为 {dt_id} 评论的回复[/yellow]')
+                    f'[yellow]爬取 id 为 {dt_id} 评论的回复[/yellow]')
                 tempWBDC = Crawl()
                 tempWBDC.id = dt['id']
                 try:
-                    tempWBDC._getJsonData(self.urlComment, level+1)
+                    tempWBDC._getJsonData(self.urlComment)
                 except:
                     print('Comment | _getJsonData')
                     raise
@@ -401,8 +368,5 @@ def crawl(x: dict) -> Any:
                 tempList.append((dt['id'], tempWBDC.data.values(), ))
             for commentD in tempList:
                 self.data[commentD[0]]['commentList'] = list(commentD[1])
-            levelIndentSize = ' ' * self._indentSize * level
-            rich.print(
-                f'{levelIndentSize}[cyan]<function crwalComment() Out>[/cyan]')
 
     return Crawl

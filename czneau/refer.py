@@ -12,6 +12,7 @@ from rich.panel import Panel
 from typing import (Union, Optional, Any, Generator, Iterator)
 from collections import UserDict
 from abc import ABC, abstractmethod
+from functools import wraps
 
 userAgentList = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60",
@@ -67,8 +68,6 @@ userAgentList = [
     "Mozilla/5.0 (compatible; MSIE 9.0; Windows Phone OS 7.5; Trident/5.0; IEMobile/9.0; HTC; Titan)",
 ]
 
-##
-
 
 class RaiseCountError(Exception):
     def __init__(self, *args: object) -> None:
@@ -96,3 +95,12 @@ class AnalyseContent(ABC):
         :raturns: A generator that traverse data
         '''
         raise StopIteration
+
+def terminalInfo(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        rich.print(f'[purple]<function {func.__name__} Start>[/purple]')
+        res = func(*args, **kwargs)
+        rich.print(f'[cyan]<function {func.__name__} Finish>[/cyan]')
+        return res
+    return wrapper
